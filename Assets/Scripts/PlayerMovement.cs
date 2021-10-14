@@ -8,10 +8,13 @@ public class PlayerMovement : MonoBehaviour
     private Rigidbody2D rigidbody2D;
     private Animator animator;
     private SpriteRenderer spriteRenderer;
+    private BoxCollider2D boxCollider;
 
     private float directionX = 0f;
     [SerializeField] private float jumpForce = 14f;
     [SerializeField] private float moveSpeed = 7f;
+
+    [SerializeField] private LayerMask jumpableGround;
 
     private enum MovementState
     {
@@ -27,6 +30,7 @@ public class PlayerMovement : MonoBehaviour
         rigidbody2D = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        boxCollider = GetComponent<BoxCollider2D>();
     }
 
     // Update is called once per frame
@@ -44,7 +48,7 @@ public class PlayerMovement : MonoBehaviour
     {
         rigidbody2D.velocity = new Vector2(moveSpeed * directionX, rigidbody2D.velocity.y);
 
-        if (Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump") && StandingOnGround())
         {
             rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, jumpForce);
         }
@@ -53,7 +57,7 @@ public class PlayerMovement : MonoBehaviour
     private void UpdateAnimationState()
     {
 
-        MovementState state;
+        MovementState state = MovementState.IDLEING;
 
         if (directionX < 0f)
         {
@@ -65,10 +69,6 @@ public class PlayerMovement : MonoBehaviour
             spriteRenderer.flipX = false;
             state = MovementState.RUNNING;
         }
-        else
-        {
-            state = MovementState.IDLEING;
-        }
 
         if (rigidbody2D.velocity.y > .1f)
         {
@@ -76,11 +76,20 @@ public class PlayerMovement : MonoBehaviour
         }
         else if (rigidbody2D.velocity.y < -.1f)
         {
+            Debug.Log(rigidbody2D.velocity.y + "Ich falle angeblich");
+
             state = MovementState.FALLING;
         }
 
+  
 
         animator.SetInteger("movementState", (int)state);
 
+    }
+
+    private bool StandingOnGround()
+    {
+        return Physics2D.BoxCast(boxCollider.bounds.center,
+            boxCollider.bounds.size, 0f, Vector2.down, .1f, jumpableGround);
     }
 }
